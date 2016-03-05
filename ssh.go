@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"path/filepath"
+	"os/user"
 
 	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
@@ -16,6 +17,15 @@ import (
 //
 
 func loadPrivateKey(filepath string) (ssh.Signer, error) {
+	if len(filepath) == 0 {
+		usr, err := user.Current()
+		if err != nil {
+			log.Fatal(err)
+		}
+		filepath = usr.HomeDir + "/.ssh/id_rsa"
+	}
+	// fmt.Println("key ", filepath)
+
 	pemBytes, err := ioutil.ReadFile(filepath)
 	if err != nil {
 		log.Fatal(err)
@@ -99,6 +109,7 @@ func (s *SSHSession) tearDown() {
 }
 
 func (s *SSHSession) executeCmd(cmd string) string {
+	// fmt.println("cmd: ", cmd)
 	var stdoutBuf bytes.Buffer
 	s.session.Stdout = &stdoutBuf
 	s.session.Run(cmd)
@@ -135,12 +146,12 @@ func MapCmd(hostnames HostGroup, username string, keypath string, command string
 	for _, hostname := range hostnames {
 		go func(hostname string) {
 			response := SSHResponse{Hostname: hostname}
-
 			session, err := ConnectToMachine(hostname, username, keypath)
+
 			defer session.tearDown()
 
 			if err != nil {
-				fmt.Println(err.Error())
+				fmt.println("connection failed: ", err.Error())
 				response.Err = err
 			} else {
 				result := session.executeCmd(command)
@@ -164,12 +175,12 @@ func MapScp(hostnames HostGroup, username string, keypath string, localPath stri
 
 			sftpc, err := session.GetSFTPClient()
 			if err != nil {
-				fmt.Println(err.Error())
+				// fmt.println("failed to get sftp client: ", err.Error())
 				response.Err = err
 			}
 			defer sftpc.Close()
 
-			fmt.Println("PARTH:", filepath.Base(remotePath))
+			fmt.println("PARTH: ", filepath.Base(remotePath))
 			// w := sftp.Walk(remotepath)
 			// for w.Step() {
 			// 	if w.Err() != nil {
@@ -180,12 +191,12 @@ func MapScp(hostnames HostGroup, username string, keypath string, localPath stri
 
 			f, err := sftpc.Create("hello.txt")
 			if err != nil {
-				fmt.Println(err.Error())
+				fmt.Println("failed to create txt: ", err.Error())
 				response.Err = err
 
 			}
 			if _, err := f.Write([]byte("Hello world!")); err != nil {
-				fmt.Println(err.Error())
+				fmt.Println("failed to write: ", err.Error())
 				response.Err = err
 			}
 

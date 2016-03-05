@@ -17,15 +17,6 @@ import (
 //
 
 func loadPrivateKey(filepath string) (ssh.Signer, error) {
-	if len(filepath) == 0 {
-		usr, err := user.Current()
-		if err != nil {
-			log.Fatal(err)
-		}
-		filepath = usr.HomeDir + "/.ssh/id_rsa"
-	}
-	// fmt.Println("key ", filepath)
-
 	pemBytes, err := ioutil.ReadFile(filepath)
 	if err != nil {
 		log.Fatal(err)
@@ -42,9 +33,22 @@ func loadPrivateKey(filepath string) (ssh.Signer, error) {
 }
 
 func generateConfig(username string, keypath string) (*ssh.ClientConfig, error) {
+	usr, err := user.Current()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if len(keypath) == 0 {
+		keypath = usr.HomeDir + "/.ssh/id_rsa"
+	}
+
 	signer, err := loadPrivateKey(keypath)
 	if err != nil {
 		return nil, err
+	}
+
+	if len(username) == 0 {
+		username = usr.Name
 	}
 
 	config := &ssh.ClientConfig{
@@ -151,7 +155,7 @@ func MapCmd(hostnames HostGroup, username string, keypath string, command string
 			defer session.tearDown()
 
 			if err != nil {
-				fmt.println("connection failed: ", err.Error())
+				fmt.Println("connection failed: ", err.Error())
 				response.Err = err
 			} else {
 				result := session.executeCmd(command)
@@ -180,7 +184,7 @@ func MapScp(hostnames HostGroup, username string, keypath string, localPath stri
 			}
 			defer sftpc.Close()
 
-			fmt.println("PARTH: ", filepath.Base(remotePath))
+			fmt.Println("PARTH: ", filepath.Base(remotePath))
 			// w := sftp.Walk(remotepath)
 			// for w.Step() {
 			// 	if w.Err() != nil {

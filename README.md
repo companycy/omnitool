@@ -69,7 +69,14 @@ total 8
 drwxr-xr-x  7 vagrant  vagrant  512 Aug 29 22:29 boombox
 
 CMD:  [ls -l]
+
+$ omnitool -g vagrants scp "foo" "bar"
+Hostname: 127.0.0.1:2200
+Result:
+
+SCP: [foo bar]
 ```
+
 
 ## Using with Vagrant
 

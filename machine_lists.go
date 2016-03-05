@@ -22,6 +22,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"fmt"
 )
 
 // File is a map of group name => group
@@ -58,6 +59,7 @@ func (f File) Load(in io.Reader) (err error) {
 
 // LoadFile opens a file by name and passes io.Reader to File.Load
 func (f File) LoadFile(file string) (err error) {
+	fmt.Println("file info: ", file)
 	in, err := os.Open(file)
 	if err != nil {
 		return
@@ -123,6 +125,13 @@ func parseFile(in *bufio.Reader, file File) (err error) {
 			file.Get(name)
 		} else {
 			host := line
+			if strings.Index(host, ":") == -1 {
+				port := os.Getenv("PORT")
+				if len(port) == 0 {
+					port = "22"
+				}
+				host += ":" + port
+			}
 			group := file.Get(currentGroup)
 			group = append(group, host)
 			file.Set(currentGroup, group)

@@ -179,12 +179,12 @@ func MapScp(hostnames HostGroup, username string, keypath string, localPath stri
 
 			sftpc, err := session.GetSFTPClient()
 			if err != nil {
-				// fmt.println("failed to get sftp client: ", err.Error())
+				fmt.Println("failed to get sftp client: ", err.Error())
 				response.Err = err
 			}
 			defer sftpc.Close()
 
-			fmt.Println("PARTH: ", filepath.Base(remotePath))
+			fmt.Println("PATH: ", filepath.Base(remotePath))
 			// w := sftp.Walk(remotepath)
 			// for w.Step() {
 			// 	if w.Err() != nil {
@@ -193,12 +193,14 @@ func MapScp(hostnames HostGroup, username string, keypath string, localPath stri
 			// 	log.Println(w.Path())
 			// }
 
-			f, err := sftpc.Create("hello.txt")
+			_, localFile := filepath.Split(localPath)
+			remoteFile := remotePath + localFile
+			f, err := sftpc.Create(remoteFile)
 			if err != nil {
 				fmt.Println("failed to create txt: ", err.Error())
 				response.Err = err
-
 			}
+
 			if _, err := f.Write([]byte("Hello world!")); err != nil {
 				fmt.Println("failed to write: ", err.Error())
 				response.Err = err

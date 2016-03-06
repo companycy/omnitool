@@ -3,10 +3,12 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
-	"path/filepath"
+	"os"
 	"os/user"
+	"path/filepath"
 
 	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
@@ -201,11 +203,27 @@ func MapScp(hostnames HostGroup, username string, keypath string, localPath stri
 				response.Err = err
 			}
 
-			if _, err := f.Write([]byte("Hello world!")); err != nil {
-				fmt.Println("failed to write: ", err.Error())
-				response.Err = err
+			lf, err := os.Open(localPath)
+			if err != nil {
+				return
 			}
+			defer lf.Close()
 
+			buf := make([]byte, 1024)
+			for {
+				n, err := lf.Read(buf)
+				if err != nil && err != io.EOF {
+					panic(err)
+				}
+				if n == 0 {
+					break
+				}
+
+				if _, err := f.Write(buf); err != nil {
+					fmt.Println("failed to write: ", err.Error())
+					response.Err = err
+				}
+			}
 			results <- response
 		}(hostname)
 	}

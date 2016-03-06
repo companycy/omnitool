@@ -219,7 +219,7 @@ func MapScp(hostnames HostGroup, username string, keypath string, localPath stri
 					break
 				}
 
-				if _, err := f.Write(buf); err != nil {
+				if _, err := f.Write(buf[:n]); err != nil {
 					fmt.Println("failed to write: ", err.Error())
 					response.Err = err
 				}

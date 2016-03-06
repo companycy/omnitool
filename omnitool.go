@@ -14,9 +14,10 @@ import (
 // They are considered common as the main command, `omnitool`, parses them and
 // every subcommand can too, allowing them to be placed anywhere on the command
 // line
-func ParseCommonFlags(c *cli.Context) (*string, *string, *HostGroup, *error) {
+func ParseCommonFlags(c *cli.Context) (*string, *string, *string, *HostGroup, *error) {
 	u := c.GlobalString("username")
 	k := c.GlobalString("keyfile")
+	p := c.GlobalString("port")
 
 	// Parse groups into list
 	ml := c.GlobalString("list")
@@ -25,13 +26,13 @@ func ParseCommonFlags(c *cli.Context) (*string, *string, *HostGroup, *error) {
 	// Load machine list file
 	mf, err := LoadFile(ml)
 	if err != nil {
-		return nil, nil, nil, &err
+		return nil, nil, nil, nil, &err
 	}
 
 	// Lost machine addresses by group name
 	machineList := mf.Get(mg)
 
-	return &u, &k, &machineList, nil
+	return &u, &k, &p, &machineList, nil
 }
 
 // GenerateCommonFlags takes a list of flags and appends them to the flags that
@@ -61,6 +62,12 @@ func GenerateCommonFlags(subFlags []cli.Flag) []cli.Flag {
 			Usage:  "Machine group to perform task on",
 			EnvVar: "OMNI_MACHINE_GROUP",
 		},
+
+		cli.StringFlag{
+			Name:   "port, p",
+			Usage:  "Machine port when ssh",
+			EnvVar: "OMNI_MACHINE_PORT",
+		},
 	}
 
 	for i := 0; i < len(subFlags); i++ {
@@ -79,15 +86,16 @@ func cmdRun(c *cli.Context) {
 
 	cmd := strings.Join(c.Args(), " ")
 
-	username, key, machineList, err := ParseCommonFlags(c)
+	username, key, port, machineList, err := ParseCommonFlags(c)
 	if err != nil {
 		log.Fatal(err)
+		// fmt.Println("cmdRun: ", (*err).Error())
 		return
 	}
 
 	results := make(chan SSHResponse)
 	timeout := time.After(60 * time.Second)
-	MapCmd(*machineList, *username, *key, cmd, results)
+	MapCmd(*machineList, *username, *key, *port, cmd, results)
 
 	for i := 0; i < len(*machineList); i++ {
 		select {
@@ -111,15 +119,16 @@ func cmdScp(c *cli.Context) {
 	localPath := c.Args()[0]
 	remotePath := c.Args()[1]
 
-	username, key, machineList, err := ParseCommonFlags(c)
+	username, key, port, machineList, err := ParseCommonFlags(c)
 	if err != nil {
 		log.Fatal(err)
+		// fmt.Println("cmdScp: ", (*err).Error())
 		return
 	}
 
 	results := make(chan SSHResponse)
 	timeout := time.After(60 * time.Second)
-	MapScp(*machineList, *username, *key, localPath, remotePath, results)
+	MapScp(*machineList, *username, *key, *port, localPath, remotePath, results)
 
 	for i := 0; i < len(*machineList); i++ {
 		select {

@@ -61,8 +61,14 @@ func generateConfig(username string, keypath string) (*ssh.ClientConfig, error) 
 	return config, nil
 }
 
-func dialServer(hostname string, config *ssh.ClientConfig) (*ssh.Client, error) {
-	conn, err := ssh.Dial("tcp", hostname, config)
+func dialServer(hostname, port string, config *ssh.ClientConfig) (*ssh.Client, error) {
+	if len(port) == 0 {
+		port = os.Getenv("PORT")
+		if len(port) == 0 {
+			port = "22"
+		}
+	}
+	conn, err := ssh.Dial("tcp", hostname+":"+port, config)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +85,7 @@ type SSHSession struct {
 	error    error
 }
 
-func (s *SSHSession) init(hostname string, username string, keypath string) error {
+func (s *SSHSession) init(hostname, username, keypath, port string) error {
 	s.hostname = hostname
 
 	// Instantiate config
@@ -91,7 +97,7 @@ func (s *SSHSession) init(hostname string, username string, keypath string) erro
 	s.config = config
 
 	// Establish connection
-	conn, err := dialServer(hostname, config)
+	conn, err := dialServer(hostname, port, config)
 	if err != nil {
 		log.Fatal(err)
 		return err
@@ -136,9 +142,9 @@ type SSHResponse struct {
 }
 
 // ConnectToMachine takes host details and returns a connected SSHSession
-func ConnectToMachine(address string, username string, keypath string) (*SSHSession, error) {
+func ConnectToMachine(address, username, keypath, port string) (*SSHSession, error) {
 	session := &SSHSession{}
-	err := session.init(address, username, keypath)
+	err := session.init(address, username, keypath, port)
 	if err != nil {
 		return nil, err
 	}
@@ -148,11 +154,11 @@ func ConnectToMachine(address string, username string, keypath string) (*SSHSess
 
 // MapCmd takes the details for a command and maps it, via SSH, across a list
 // of hosts
-func MapCmd(hostnames HostGroup, username string, keypath string, command string, results chan SSHResponse) {
+func MapCmd(hostnames HostGroup, username, keypath, port, command string, results chan SSHResponse) {
 	for _, hostname := range hostnames {
 		go func(hostname string) {
 			response := SSHResponse{Hostname: hostname}
-			session, err := ConnectToMachine(hostname, username, keypath)
+			session, err := ConnectToMachine(hostname, username, keypath, port)
 
 			defer session.tearDown()
 
@@ -171,12 +177,12 @@ func MapCmd(hostnames HostGroup, username string, keypath string, command string
 
 // MapScp takes the details for a file transfer and maps the file transfer
 // across a list of hosts
-func MapScp(hostnames HostGroup, username string, keypath string, localPath string, remotePath string, results chan SSHResponse) {
+func MapScp(hostnames HostGroup, username, keypath, port, localPath, remotePath string, results chan SSHResponse) {
 	for _, hostname := range hostnames {
 		go func(hostname string) {
 			response := SSHResponse{Hostname: hostname}
 
-			session, err := ConnectToMachine(hostname, username, keypath)
+			session, err := ConnectToMachine(hostname, username, keypath, port)
 			defer session.tearDown()
 
 			sftpc, err := session.GetSFTPClient()

@@ -7,8 +7,8 @@ Omnitool's goal is to let you think in terms of one machine while working with N
 ## Installing
 
 ```
-$ go get github.com/jmsdnns/omnitool
-$ go install github.com/jmsdnns/omnitool
+$ go get github.com/companycy/omnitool
+$ go install github.com/companycy/omnitool
 ```
 
 ## Using It
@@ -87,3 +87,4 @@ It's easy to use omnitool with Vagrant. Create a machine list called `vagrants` 
 | `-u`   | vagrant                               |
 | `-k`   | $HOME/.vagrant.d/insecure_private_key |
 | `-g`   | vagrants                              |
+

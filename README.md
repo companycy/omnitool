@@ -38,6 +38,7 @@ GLOBAL OPTIONS:
    --username, -u 	Username for machine group [$OMNI_USERNAME]
    --keyfile, -k 	Path to auth key [$OMNI_KEYFILE]
    --group, -g 		Machine group to perform task on [$OMNI_MACHINE_GROUP]
+   --port, -p 		Machine port when ssh [$OMNI_MACHINE_PORT]
    --help, -h		show help
    --version, -v	print the version
 ```
